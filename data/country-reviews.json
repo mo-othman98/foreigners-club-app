@@ -1,0 +1,27 @@
+[
+  {
+    "countrySlug": "morocco",
+    "reviewerName": "Moody",
+    "identityLabel": "States · Palestine · Turkey · USA",
+    "citizenships": [
+      "United States",
+      "Palestine",
+      "Turkey"
+    ],
+    "heritageCountries": [
+      "USA"
+    ],
+    "yearsLived": "2 years",
+    "text": "Amazing place and amazing people \n. Especially as a palestinian",
+    "ratings": {
+      "friendliness": 90,
+      "cost": 30,
+      "safety": 80,
+      "languageAccessibility": 85,
+      "easeOfMakingFriends": 60,
+      "bureaucracy": 50
+    },
+    "id": "685d46b5-14ab-4182-90de-8368d1f4a1cf",
+    "createdAt": "2026-06-10T13:09:26.563Z"
+  }
+]

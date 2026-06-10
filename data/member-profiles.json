@@ -1,0 +1,223 @@
+[
+  {
+    "id": "32eccbd8-b4fe-4e38-9037-5e4dbf152edf",
+    "email": "mo-othman98@hotmail.com",
+    "name": "Moody",
+    "journal": {
+      "name": "Moody",
+      "citizenships": [
+        "United States",
+        "Palestine",
+        "Turkey"
+      ],
+      "activeCitizenshipIndex": 0,
+      "primaryTravelPassportIndex": 0,
+      "onboardingComplete": true,
+      "currentCountry": "Morocco",
+      "currentCity": "Rabat",
+      "languages": [
+        "English",
+        "Arabic",
+        "darija"
+      ],
+      "heritageCountries": [
+        "USA"
+      ],
+      "familyOrigins": "Palestine",
+      "culturalBackground": "Palestine",
+      "bio": "International playa, holla!",
+      "livedEntries": [],
+      "stamps": [
+        {
+          "id": "stamp-1781100557012-zglk7",
+          "country": "Argentina",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-wcsph",
+          "country": "Bolivia",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-eqic4",
+          "country": "Brazil",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-jvzbi",
+          "country": "Cambodia",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-gztqg",
+          "country": "Chile",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-sv0ft",
+          "country": "Egypt",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-hz4sv",
+          "country": "Germany",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-mz9jj",
+          "country": "Japan",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-d9x8p",
+          "country": "Jordan",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-8lb36",
+          "country": "Laos",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-frn2c",
+          "country": "Lebanon",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-099a3",
+          "country": "Mexico",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100307241-zbeg7",
+          "country": "Morocco",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "notes": "",
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-arl8g",
+          "country": "Palestine",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-h5jeg",
+          "country": "Peru",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-r9s5i",
+          "country": "Spain",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-j3xmk",
+          "country": "Thailand",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-2k3qe",
+          "country": "Tunisia",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-1252i",
+          "country": "Turkey",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-mq3vl",
+          "country": "United Kingdom",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-nunqk",
+          "country": "United States",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-qvlrs",
+          "country": "Uruguay",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        },
+        {
+          "id": "stamp-1781100557012-xylto",
+          "country": "Vietnam",
+          "type": "visitor",
+          "entryDate": "2026",
+          "cities": [],
+          "passportCountry": "United States"
+        }
+      ],
+      "nationality": "",
+      "birthCountry": ""
+    },
+    "createdAt": "2026-06-10T14:17:21.236Z",
+    "updatedAt": "2026-06-10T14:29:25.947Z"
+  }
+]

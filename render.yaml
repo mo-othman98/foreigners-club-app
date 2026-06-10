@@ -1,0 +1,19 @@
+# Deploy at https://render.com — connect this repo and use "Blueprint" deploy.
+# The persistent disk keeps reviews, profiles, messages, and photos across restarts.
+services:
+  - type: web
+    name: foreigners-club-api
+    runtime: node
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/connect
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /var/data
+    disk:
+      name: foreigners-club-data
+      mountPath: /var/data
+      sizeGB: 1
