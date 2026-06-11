@@ -12,6 +12,10 @@ services:
         value: /var/data
       - key: DATABASE_URL
         value: file:/var/data/app.db
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: AUTH_DEV_CODES
+        value: "true"
     disk:
       name: foreigners-club-data
       mountPath: /var/data
