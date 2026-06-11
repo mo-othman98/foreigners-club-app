@@ -47,4 +47,3 @@ data/profile-photos/
 *.tsbuildinfo
 next-env.d.ts
 
-/src/generated/prisma
