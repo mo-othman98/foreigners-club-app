@@ -1,22 +1,17 @@
-# Deploy at https://render.com — connect this repo and use "Blueprint" deploy.
-# The persistent disk keeps reviews, profiles, messages, and photos across restarts.
+# Blueprint deploy — uses Docker so Render never mis-detects Ruby.
 services:
   - type: web
     name: foreigners-club-api
-    runtime: node
+    runtime: docker
+    dockerfilePath: ./Dockerfile
     plan: starter
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    healthCheckPath: /api/connect
     envVars:
       - key: NODE_ENV
         value: production
-      - key: NODE_VERSION
-        value: "20"
-      - key: DATABASE_URL
-        value: file:/var/data/app.db
       - key: DATA_DIR
         value: /var/data
+      - key: DATABASE_URL
+        value: file:/var/data/app.db
     disk:
       name: foreigners-club-data
       mountPath: /var/data

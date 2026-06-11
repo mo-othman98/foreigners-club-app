@@ -1,9 +1,13 @@
-FROM node:20-bookworm-slim
+FROM node:20-bookworm
 
 WORKDIR /app
 
+# Native modules (better-sqlite3) need build tools on Linux
+RUN apt-get update && apt-get install -y python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --include=dev
 
 COPY . .
 RUN npm run build
