@@ -39,6 +39,7 @@ dev.db
 
 # uploaded profile photos (created at runtime on server)
 data/profile-photos/
+data/country-feed/
 
 # vercel
 .vercel
