@@ -15,7 +15,11 @@ services:
       - key: AUTH_SECRET
         generateValue: true
       - key: AUTH_DEV_CODES
-        value: "true"
+        value: "false"
+      - key: AUTH_FROM_EMAIL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
     disk:
       name: foreigners-club-data
       mountPath: /var/data

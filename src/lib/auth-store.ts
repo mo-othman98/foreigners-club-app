@@ -178,7 +178,7 @@ export async function signUpUser(input: {
   return {
     user: toPublic(user),
     token,
-    devVerificationCode: mail.devCode,
+    devVerificationCode: mail.sent ? undefined : mail.devCode,
   };
 }
 
@@ -287,7 +287,7 @@ export async function resendVerification(email: string): Promise<{
   }
 
   const mail = await issueVerification(user);
-  return { devVerificationCode: mail.devCode };
+  return { devVerificationCode: mail.sent ? undefined : mail.devCode };
 }
 
 export async function revokeSession(token: string) {
