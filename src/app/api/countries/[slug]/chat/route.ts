@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ensureDataMaintenance } from "@/lib/data-maintenance";
 import {
   getCountryChatMessages,
   postCountryChatMessage,
@@ -18,6 +19,7 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  await ensureDataMaintenance();
   const { slug } = await params;
   const since = new URL(request.url).searchParams.get("since") ?? undefined;
   const messages = await getCountryChatMessages(slug, since);

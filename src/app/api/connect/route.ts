@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ensureDataMaintenance } from "@/lib/data-maintenance";
 import { saveProfilePhoto } from "@/lib/profile-photos";
 import {
   listMemberProfiles,
@@ -16,6 +17,7 @@ export async function OPTIONS() {
 }
 
 export async function GET() {
+  await ensureDataMaintenance();
   const profiles = await listMemberProfiles();
   return NextResponse.json({ profiles }, { headers: CORS });
 }

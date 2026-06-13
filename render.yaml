@@ -14,6 +14,8 @@ services:
         value: file:/var/data/app.db
       - key: AUTH_SECRET
         generateValue: true
+      - key: ADMIN_SECRET
+        generateValue: true
       - key: AUTH_DEV_CODES
         value: "false"
       - key: AUTH_FROM_EMAIL

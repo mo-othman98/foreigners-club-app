@@ -54,6 +54,42 @@ export async function listMemberProfiles(): Promise<StoredMemberProfile[]> {
     });
 }
 
+export async function deleteMemberProfilesByIds(ids: string[]): Promise<number> {
+  const drop = new Set(ids.map((id) => id.trim()).filter(Boolean));
+  if (drop.size === 0) return 0;
+  const all = await readAll();
+  const next = all.filter((p) => !drop.has(p.id));
+  const removed = all.length - next.length;
+  if (removed > 0) await writeAll(next);
+  return removed;
+}
+
+/** Keep one profile for an email; remove other profiles with the same display name. */
+export async function dedupeMemberProfilesByNameKeepingEmail(
+  name: string,
+  keepEmail: string
+): Promise<{ removed: number; keptId?: string }> {
+  const targetName = name.trim().toLowerCase();
+  const keep = keepEmail.toLowerCase().trim();
+  const all = await readAll();
+  const matches = all.filter((p) => p.name.trim().toLowerCase() === targetName);
+  const keepProfile =
+    matches.find((p) => p.email.toLowerCase().trim() === keep) ??
+    matches.sort((a, b) => {
+      const aTime = a.updatedAt ?? a.createdAt;
+      const bTime = b.updatedAt ?? b.createdAt;
+      return bTime.localeCompare(aTime);
+    })[0];
+
+  if (!keepProfile) return { removed: 0 };
+
+  const removeIds = matches
+    .filter((p) => p.id !== keepProfile.id)
+    .map((p) => p.id);
+  const removed = await deleteMemberProfilesByIds(removeIds);
+  return { removed, keptId: keepProfile.id };
+}
+
 export async function upsertMemberProfile(input: {
   email: string;
   name: string;

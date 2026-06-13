@@ -65,6 +65,22 @@ export async function getCountryChatMessages(
   return list.slice(-200);
 }
 
+export async function clearAllCountryChatMessages(): Promise<number> {
+  const all = await readAll();
+  const count = all.length;
+  if (count > 0) await writeAll([]);
+  return count;
+}
+
+export async function clearCountryChatMessages(countrySlug: string): Promise<number> {
+  const slug = normSlug(countrySlug);
+  const all = await readAll();
+  const next = all.filter((m) => normSlug(m.countrySlug) !== slug);
+  const removed = all.length - next.length;
+  if (removed > 0) await writeAll(next);
+  return removed;
+}
+
 export async function postCountryChatMessage(input: {
   countrySlug: string;
   authorEmail: string;
