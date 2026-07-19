@@ -1,5 +1,7 @@
 import {
   SCORE_LABELS,
+  categoryScoreTextClass,
+  dimensionBarColor,
   dimensionBarValue,
   scoreColor,
   scoreRingColor,
@@ -74,7 +76,13 @@ export default function ForeignerScoreCard({
                       <span className="font-medium text-slate-600">
                         {SCORE_LABELS[key]}
                       </span>
-                      <span className="text-slate-400">
+                      <span
+                        className={
+                          key === "languageAccessibility" && languageLabel
+                            ? "text-slate-400"
+                            : categoryScoreTextClass(display)
+                        }
+                      >
                         {key === "languageAccessibility" && languageLabel
                           ? languageLabel
                           : isBureaucracy
@@ -84,19 +92,7 @@ export default function ForeignerScoreCard({
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
                       <div
-                        className={`h-full rounded-full transition-all ${
-                          isBureaucracy
-                            ? display >= 60
-                              ? "bg-emerald-500"
-                              : display >= 40
-                                ? "bg-amber-500"
-                                : "bg-orange-500"
-                            : display >= 75
-                              ? "bg-teal-500"
-                              : display >= 55
-                                ? "bg-amber-500"
-                                : "bg-orange-500"
-                        }`}
+                        className={`h-full rounded-full transition-all ${dimensionBarColor(display)}`}
                         style={{ width: `${display}%` }}
                       />
                     </div>

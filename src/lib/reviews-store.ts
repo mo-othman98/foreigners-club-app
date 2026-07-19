@@ -10,17 +10,34 @@ export interface StoredCountryReview {
   reviewerName: string;
   identityLabel: string;
   citizenships: string[];
+  familyBackground?: string;
   heritageCountries: string[];
   yearsLived: string;
   citiesVisited: string[];
   text: string;
+  overallScore?: number;
   ratings: {
-    friendliness: number;
-    cost: number;
-    safety: number;
-    languageAccessibility: number;
-    easeOfMakingFriends: number;
+    hospitality: number;
+    abilityToMakeFriends: number;
+    communication: number;
+    locals: number;
+    foreigners: number;
+    costOfLiving: number;
+    publicTransportation: number;
+    workLifeBalance: number;
+    activities: number;
+    nightlife: number;
+    localCrime: number;
+    internationalReputation: number;
+    architecture: number;
     bureaucracy: number;
+    /** @deprecated legacy */
+    friendliness?: number;
+    cost?: number;
+    safety?: number;
+    languageAccessibility?: number;
+    food?: number;
+    fun?: number;
   };
   createdAt: string;
   updatedAt?: string;
@@ -47,6 +64,7 @@ async function readAll(): Promise<StoredCountryReview[]> {
       ...r,
       authorEmail: r.authorEmail ?? "",
       citiesVisited: r.citiesVisited ?? [],
+      familyBackground: r.familyBackground ?? "",
     }));
   } catch {
     return [];

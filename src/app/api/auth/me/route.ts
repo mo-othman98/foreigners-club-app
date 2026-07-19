@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { CORS_HEADERS } from "@/lib/api-cors";
+import { isAdminEmail } from "@/lib/admin-auth";
 import { getUserBySessionToken } from "@/lib/auth-store";
 
 export async function OPTIONS() {
@@ -18,5 +19,13 @@ export async function GET(request: Request) {
     );
   }
 
-  return NextResponse.json({ user }, { headers: CORS_HEADERS });
+  return NextResponse.json(
+    {
+      user: {
+        ...user,
+        isAdmin: isAdminEmail(user.email),
+      },
+    },
+    { headers: CORS_HEADERS }
+  );
 }

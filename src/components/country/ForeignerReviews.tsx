@@ -34,7 +34,7 @@ export default function ForeignerReviews({
                   {review.nationality}
                 </p>
                 <p className="text-xs text-slate-400">
-                  Lived {review.yearsLived}
+                  {review.yearsLived}
                 </p>
               </div>
             </div>

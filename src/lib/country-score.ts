@@ -31,17 +31,27 @@ export function calculateForeignerScore(dimensions: ScoreDimensions): number {
 }
 
 export function scoreColor(score: number): string {
-  if (score >= 80) return "text-emerald-600";
-  if (score >= 65) return "text-teal-600";
-  if (score >= 50) return "text-amber-600";
-  return "text-orange-600";
+  if (score >= 70) return "text-green-600";
+  if (score >= 45) return "text-yellow-600";
+  return "text-red-600";
 }
 
 export function scoreRingColor(score: number): string {
-  if (score >= 80) return "stroke-emerald-500";
-  if (score >= 65) return "stroke-teal-500";
-  if (score >= 50) return "stroke-amber-500";
-  return "stroke-orange-500";
+  if (score >= 70) return "stroke-green-500";
+  if (score >= 45) return "stroke-yellow-500";
+  return "stroke-red-500";
+}
+
+export function dimensionBarColor(value: number): string {
+  if (value >= 70) return "bg-green-500";
+  if (value >= 45) return "bg-yellow-500";
+  return "bg-red-500";
+}
+
+export function categoryScoreTextClass(value: number): string {
+  if (value >= 70) return "text-green-600 font-medium";
+  if (value >= 45) return "text-yellow-600 font-medium";
+  return "text-red-600 font-medium";
 }
 
 export function dimensionBarValue(

@@ -134,7 +134,78 @@ function seededValue(seed: number, min: number, max: number): number {
   return Math.round(min + normalized * (max - min));
 }
 
+/** Curated score dimensions — higher cost = more affordable (inverse of monthly USD). */
+const CURATED_DIMENSIONS: Partial<Record<string, ScoreDimensions>> = {
+  AE: {
+    friendliness: 76,
+    cost: 8,
+    easeOfMakingFriends: 62,
+    safety: 94,
+    languageAccessibility: 88,
+    bureaucracyDifficulty: 52,
+  },
+  SG: {
+    friendliness: 72,
+    cost: 6,
+    easeOfMakingFriends: 58,
+    safety: 96,
+    languageAccessibility: 92,
+    bureaucracyDifficulty: 42,
+  },
+  QA: {
+    friendliness: 74,
+    cost: 10,
+    easeOfMakingFriends: 60,
+    safety: 93,
+    languageAccessibility: 82,
+    bureaucracyDifficulty: 50,
+  },
+  CH: {
+    friendliness: 70,
+    cost: 5,
+    easeOfMakingFriends: 55,
+    safety: 94,
+    languageAccessibility: 55,
+    bureaucracyDifficulty: 38,
+  },
+  JP: {
+    friendliness: 70,
+    cost: 32,
+    easeOfMakingFriends: 48,
+    safety: 95,
+    languageAccessibility: 50,
+    bureaucracyDifficulty: 40,
+  },
+  TH: {
+    friendliness: 88,
+    cost: 82,
+    easeOfMakingFriends: 78,
+    safety: 74,
+    languageAccessibility: 55,
+    bureaucracyDifficulty: 42,
+  },
+  ZA: {
+    friendliness: 78,
+    cost: 78,
+    easeOfMakingFriends: 65,
+    safety: 48,
+    languageAccessibility: 88,
+    bureaucracyDifficulty: 50,
+  },
+  US: {
+    friendliness: 74,
+    cost: 8,
+    easeOfMakingFriends: 68,
+    safety: 68,
+    languageAccessibility: 96,
+    bureaucracyDifficulty: 62,
+  },
+};
+
 function generateDimensions(code: string, name: string): ScoreDimensions {
+  const curated = CURATED_DIMENSIONS[code];
+  if (curated) return curated;
+
   const insight = COUNTRY_INSIGHTS[code];
   const seed = hashSeed(code + name);
 

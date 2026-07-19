@@ -18,6 +18,8 @@ services:
         generateValue: true
       - key: AUTH_DEV_CODES
         value: "false"
+      - key: ADMIN_EMAILS
+        value: "mo-othman98@hotmail.com"
       - key: AUTH_FROM_EMAIL
         sync: false
       - key: RESEND_API_KEY
