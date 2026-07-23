@@ -9,6 +9,7 @@ import {
   verifyPassword,
 } from "./auth-crypto";
 import { sendVerificationEmail } from "./auth-email";
+import { isAdminEmail } from "./admin-auth";
 
 export interface StoredAuthUser {
   id: string;
@@ -19,6 +20,8 @@ export interface StoredAuthUser {
   emailVerified: boolean;
   verificationCode?: string;
   verificationExpires?: string;
+  /** When set, verification code is for password reset instead of email verify. */
+  resetPending?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -101,7 +104,7 @@ function toPublic(user: StoredAuthUser): PublicAuthUser {
     email: user.email,
     name: user.name,
     emailVerified: user.emailVerified,
-    provider: user.googleId ? "google" : "email",
+    provider: user.googleId && !user.passwordHash ? "google" : "email",
   };
 }
 
@@ -134,14 +137,32 @@ async function saveUser(user: StoredAuthUser) {
   await writeUsers(users);
 }
 
-async function issueVerification(user: StoredAuthUser) {
+async function deleteUserById(userId: string) {
+  const users = await readUsers();
+  await writeUsers(users.filter((u) => u.id !== userId));
+}
+
+async function issueVerification(
+  user: StoredAuthUser,
+  opts?: { reset?: boolean }
+) {
   const code = createVerificationCode();
   user.verificationCode = code;
   user.verificationExpires = codeExpiry();
+  user.resetPending = opts?.reset === true;
   user.updatedAt = new Date().toISOString();
   await saveUser(user);
   const mail = await sendVerificationEmail(user.email, user.name, code);
   return mail;
+}
+
+function markAdminVerified(user: StoredAuthUser) {
+  if (!isAdminEmail(user.email)) return false;
+  user.emailVerified = true;
+  user.verificationCode = undefined;
+  user.verificationExpires = undefined;
+  user.resetPending = undefined;
+  return true;
 }
 
 export async function signUpUser(input: {
@@ -158,7 +179,16 @@ export async function signUpUser(input: {
   if (password.length < 8) throw new Error("Password must be at least 8 characters");
 
   const existing = await findUserByEmail(email);
-  if (existing) throw new Error("An account with this email already exists");
+  if (existing) {
+    if (!existing.passwordHash) {
+      throw new Error(
+        "This email already uses Google sign-in. Log in with Google, or use Forgot password to set a password."
+      );
+    }
+    throw new Error(
+      "An account with this email already exists. Log in, or use Forgot password."
+    );
+  }
 
   const now = new Date().toISOString();
   const user: StoredAuthUser = {
@@ -171,15 +201,27 @@ export async function signUpUser(input: {
     updatedAt: now,
   };
 
-  await saveUser(user);
-  const mail = await issueVerification(user);
-  const token = await createSession(user.id);
+  if (markAdminVerified(user)) {
+    await saveUser(user);
+    const token = await createSession(user.id);
+    return { user: toPublic(user), token };
+  }
 
-  return {
-    user: toPublic(user),
-    token,
-    devVerificationCode: mail.sent ? undefined : mail.devCode,
-  };
+  await saveUser(user);
+  try {
+    const mail = await issueVerification(user);
+    const token = await createSession(user.id);
+    return {
+      user: toPublic(user),
+      token,
+      devVerificationCode: mail.sent ? undefined : mail.devCode,
+    };
+  } catch (err) {
+    await deleteUserById(user.id);
+    throw err instanceof Error
+      ? err
+      : new Error("Could not send verification email. Try again shortly.");
+  }
 }
 
 export async function loginUser(input: {
@@ -188,12 +230,22 @@ export async function loginUser(input: {
 }): Promise<{ user: PublicAuthUser; token: string }> {
   const email = normEmail(input.email);
   const user = await findUserByEmail(email);
-  if (!user?.passwordHash) {
+  if (!user) {
     throw new Error("Invalid email or password");
+  }
+  if (!user.passwordHash) {
+    throw new Error(
+      "This account uses Google sign-in. Tap Continue with Google, or use Forgot password to set a password."
+    );
   }
 
   const ok = await verifyPassword(input.password, user.passwordHash);
   if (!ok) throw new Error("Invalid email or password");
+
+  if (markAdminVerified(user)) {
+    user.updatedAt = new Date().toISOString();
+    await saveUser(user);
+  }
 
   const token = await createSession(user.id);
   return { user: toPublic(user), token };
@@ -221,11 +273,13 @@ export async function loginOrRegisterGoogle(input: {
       createdAt: now,
       updatedAt: now,
     };
+    markAdminVerified(user);
     await saveUser(user);
   } else {
     user.googleId = input.googleId;
     user.name = user.name || input.name.trim();
     user.emailVerified = user.emailVerified || input.emailVerified;
+    markAdminVerified(user);
     user.updatedAt = now;
     await saveUser(user);
   }
@@ -247,6 +301,11 @@ export async function getUserBySessionToken(
   const user = users.find((u) => u.id === session.userId);
   if (!user) return null;
 
+  if (markAdminVerified(user)) {
+    user.updatedAt = now;
+    await saveUser(user);
+  }
+
   return toPublic(user);
 }
 
@@ -256,21 +315,26 @@ export async function verifyEmailCode(
 ): Promise<PublicAuthUser> {
   const user = await findUserByEmail(email);
   if (!user) throw new Error("Account not found");
-  if (user.emailVerified) return toPublic(user);
+  if (user.emailVerified && !user.resetPending) return toPublic(user);
 
   const trimmed = code.trim();
   if (
+    user.resetPending ||
     !user.verificationCode ||
     user.verificationCode !== trimmed ||
     !user.verificationExpires ||
     user.verificationExpires < new Date().toISOString()
   ) {
+    if (user.resetPending) {
+      throw new Error("Use Forgot password with this code");
+    }
     throw new Error("Invalid or expired verification code");
   }
 
   user.emailVerified = true;
   user.verificationCode = undefined;
   user.verificationExpires = undefined;
+  user.resetPending = undefined;
   user.updatedAt = new Date().toISOString();
   await saveUser(user);
   return toPublic(user);
@@ -286,8 +350,74 @@ export async function resendVerification(email: string): Promise<{
     throw new Error("This account uses Google sign-in");
   }
 
+  if (markAdminVerified(user)) {
+    await saveUser(user);
+    return {};
+  }
+
   const mail = await issueVerification(user);
   return { devVerificationCode: mail.sent ? undefined : mail.devCode };
+}
+
+/** Send a password-reset code. Always returns ok to avoid email enumeration. */
+export async function requestPasswordReset(email: string): Promise<{
+  ok: true;
+  devVerificationCode?: string;
+}> {
+  const user = await findUserByEmail(normEmail(email));
+  if (!user) {
+    return { ok: true };
+  }
+
+  try {
+    const mail = await issueVerification(user, { reset: true });
+    return {
+      ok: true,
+      devVerificationCode: mail.sent ? undefined : mail.devCode,
+    };
+  } catch (err) {
+    // Code is already saved on the user before send; surface for admin recovery.
+    if (isAdminEmail(user.email) && user.verificationCode) {
+      return { ok: true, devVerificationCode: user.verificationCode };
+    }
+    throw err instanceof Error
+      ? err
+      : new Error("Could not send reset email. Try again shortly.");
+  }
+}
+
+export async function resetPasswordWithCode(input: {
+  email: string;
+  code: string;
+  password: string;
+}): Promise<{ user: PublicAuthUser; token: string }> {
+  const email = normEmail(input.email);
+  const password = input.password;
+  if (password.length < 8) throw new Error("Password must be at least 8 characters");
+
+  const user = await findUserByEmail(email);
+  if (!user) throw new Error("Invalid or expired reset code");
+
+  const trimmed = input.code.trim();
+  if (
+    !user.verificationCode ||
+    user.verificationCode !== trimmed ||
+    !user.verificationExpires ||
+    user.verificationExpires < new Date().toISOString()
+  ) {
+    throw new Error("Invalid or expired reset code");
+  }
+
+  user.passwordHash = await hashPassword(password);
+  user.emailVerified = true;
+  user.verificationCode = undefined;
+  user.verificationExpires = undefined;
+  user.resetPending = undefined;
+  user.updatedAt = new Date().toISOString();
+  await saveUser(user);
+
+  const token = await createSession(user.id);
+  return { user: toPublic(user), token };
 }
 
 export async function revokeSession(token: string) {

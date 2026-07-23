@@ -110,9 +110,11 @@ export async function sendVerificationEmail(
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    console.error("[auth] Resend failed:", text);
-    throw new Error("Could not send verification email. Check AUTH_FROM_EMAIL domain setup.");
+    const body = await res.text();
+    console.error("[auth] Resend failed:", body);
+    throw new Error(
+      "Could not send email. Check RESEND_API_KEY and AUTH_FROM_EMAIL (verified domain) on the server."
+    );
   }
 
   console.log(`[auth] Verification email sent to ${email}`);
