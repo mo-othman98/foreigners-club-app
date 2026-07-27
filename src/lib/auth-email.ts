@@ -82,17 +82,21 @@ export async function sendVerificationEmail(
   const { subject, text, html } = buildVerificationEmail(name, code);
 
   if (!apiKey) {
-    const exposeDev = process.env.AUTH_DEV_CODES === "true";
-    console.log(`[auth] Verification code for ${email}: ${code}`);
-    if (process.env.NODE_ENV === "production" && !exposeDev) {
-      throw new Error(
-        "Email verification is not configured. Add RESEND_API_KEY on the server."
-      );
-    }
-    return { sent: false, devCode: exposeDev ? code : undefined };
+    // Beta / misconfigured hosts: don't block signup — caller can auto-verify
+    // or surface the code in the app.
+    console.log(`[auth] No RESEND_API_KEY — verification code for ${email}: ${code}`);
+    return { sent: false, devCode: code };
   }
 
-  const from = getFromEmail();
+  let from: string;
+  try {
+    from = getFromEmail();
+  } catch (err) {
+    console.error("[auth] AUTH_FROM_EMAIL missing:", err);
+    console.log(`[auth] Verification code for ${email}: ${code}`);
+    return { sent: false, devCode: code };
+  }
+
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -112,9 +116,9 @@ export async function sendVerificationEmail(
   if (!res.ok) {
     const body = await res.text();
     console.error("[auth] Resend failed:", body);
-    throw new Error(
-      "Could not send email. Check RESEND_API_KEY and AUTH_FROM_EMAIL (verified domain) on the server."
-    );
+    console.log(`[auth] Verification code for ${email}: ${code}`);
+    // Don't hard-fail signup/login recovery when email delivery is broken.
+    return { sent: false, devCode: code };
   }
 
   console.log(`[auth] Verification email sent to ${email}`);

@@ -210,17 +210,28 @@ export async function signUpUser(input: {
   await saveUser(user);
   try {
     const mail = await issueVerification(user);
+    // When Resend isn't configured (or email send fails), auto-verify so
+    // TestFlight / beta testers can still create accounts and enter the app.
+    if (!mail.sent) {
+      user.emailVerified = true;
+      user.verificationCode = undefined;
+      user.verificationExpires = undefined;
+      user.resetPending = undefined;
+      user.updatedAt = new Date().toISOString();
+      await saveUser(user);
+    }
     const token = await createSession(user.id);
     return {
       user: toPublic(user),
       token,
-      devVerificationCode: mail.sent ? undefined : mail.devCode,
+      // Only returned when still needing manual verify (shouldn't happen often)
+      devVerificationCode: mail.sent || user.emailVerified ? undefined : mail.devCode,
     };
   } catch (err) {
     await deleteUserById(user.id);
     throw err instanceof Error
       ? err
-      : new Error("Could not send verification email. Try again shortly.");
+      : new Error("Could not create account. Try again shortly.");
   }
 }
 
