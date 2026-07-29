@@ -20,10 +20,18 @@ services:
         value: "false"
       - key: ADMIN_EMAILS
         value: "mo-othman98@hotmail.com"
+      - key: AUTH_REQUIRE_EMAIL_VERIFICATION
+        value: "false"
       - key: AUTH_FROM_EMAIL
         sync: false
       - key: RESEND_API_KEY
         sync: false
+      - key: APP_REVIEW_EMAIL
+        sync: false
+      - key: APP_REVIEW_PASSWORD
+        sync: false
+      - key: APP_REVIEW_NAME
+        value: "App Reviewer"
     disk:
       name: foreigners-club-data
       mountPath: /var/data

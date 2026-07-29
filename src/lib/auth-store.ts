@@ -10,6 +10,11 @@ import {
 } from "./auth-crypto";
 import { sendVerificationEmail } from "./auth-email";
 import { isAdminEmail } from "./admin-auth";
+import {
+  getAppReviewCredentials,
+  passwordResetAvailable,
+  shouldRequireEmailVerification,
+} from "./auth-config";
 
 export interface StoredAuthUser {
   id: string;
@@ -165,11 +170,46 @@ function markAdminVerified(user: StoredAuthUser) {
   return true;
 }
 
+/** Ensures Apple App Review can always sign in with env credentials. */
+export async function ensureAppReviewAccount(): Promise<void> {
+  const creds = getAppReviewCredentials();
+  if (!creds) return;
+
+  const existing = await findUserByEmail(creds.email);
+  const now = new Date().toISOString();
+  const passwordHash = await hashPassword(creds.password);
+
+  if (!existing) {
+    await saveUser({
+      id: randomUUID(),
+      email: creds.email,
+      name: creds.name,
+      passwordHash,
+      emailVerified: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+    console.log(`[auth] App Review account created for ${creds.email}`);
+    return;
+  }
+
+  existing.passwordHash = passwordHash;
+  existing.name = existing.name || creds.name;
+  existing.emailVerified = true;
+  existing.verificationCode = undefined;
+  existing.verificationExpires = undefined;
+  existing.resetPending = undefined;
+  existing.updatedAt = now;
+  await saveUser(existing);
+}
+
 export async function signUpUser(input: {
   email: string;
   name: string;
   password: string;
 }): Promise<{ user: PublicAuthUser; token: string; devVerificationCode?: string }> {
+  await ensureAppReviewAccount();
+
   const email = normEmail(input.email);
   const name = input.name.trim();
   const password = input.password;
@@ -207,26 +247,25 @@ export async function signUpUser(input: {
     return { user: toPublic(user), token };
   }
 
+  // App Store launch path without Resend: password accounts are usable immediately.
+  if (!shouldRequireEmailVerification()) {
+    user.emailVerified = true;
+    await saveUser(user);
+    const token = await createSession(user.id);
+    return { user: toPublic(user), token };
+  }
+
   await saveUser(user);
   try {
     const mail = await issueVerification(user);
-    // When Resend isn't configured (or email send fails), auto-verify so
-    // TestFlight / beta testers can still create accounts and enter the app.
     if (!mail.sent) {
-      user.emailVerified = true;
-      user.verificationCode = undefined;
-      user.verificationExpires = undefined;
-      user.resetPending = undefined;
-      user.updatedAt = new Date().toISOString();
-      await saveUser(user);
+      await deleteUserById(user.id);
+      throw new Error(
+        "Could not send verification email. Please try again in a moment."
+      );
     }
     const token = await createSession(user.id);
-    return {
-      user: toPublic(user),
-      token,
-      // Only returned when still needing manual verify (shouldn't happen often)
-      devVerificationCode: mail.sent || user.emailVerified ? undefined : mail.devCode,
-    };
+    return { user: toPublic(user), token };
   } catch (err) {
     await deleteUserById(user.id);
     throw err instanceof Error
@@ -239,6 +278,8 @@ export async function loginUser(input: {
   email: string;
   password: string;
 }): Promise<{ user: PublicAuthUser; token: string }> {
+  await ensureAppReviewAccount();
+
   const email = normEmail(input.email);
   const user = await findUserByEmail(email);
   if (!user) {
@@ -254,6 +295,14 @@ export async function loginUser(input: {
   if (!ok) throw new Error("Invalid email or password");
 
   if (markAdminVerified(user)) {
+    user.updatedAt = new Date().toISOString();
+    await saveUser(user);
+  } else if (!shouldRequireEmailVerification() && !user.emailVerified) {
+    // Older accounts created while email was misconfigured.
+    user.emailVerified = true;
+    user.verificationCode = undefined;
+    user.verificationExpires = undefined;
+    user.resetPending = undefined;
     user.updatedAt = new Date().toISOString();
     await saveUser(user);
   }
@@ -366,8 +415,21 @@ export async function resendVerification(email: string): Promise<{
     return {};
   }
 
+  if (!shouldRequireEmailVerification()) {
+    user.emailVerified = true;
+    user.verificationCode = undefined;
+    user.verificationExpires = undefined;
+    await saveUser(user);
+    return {};
+  }
+
   const mail = await issueVerification(user);
-  return { devVerificationCode: mail.sent ? undefined : mail.devCode };
+  if (!mail.sent) {
+    throw new Error(
+      "Could not send verification email. Please try again in a moment."
+    );
+  }
+  return {};
 }
 
 /** Send a password-reset code. Always returns ok to avoid email enumeration. */
@@ -375,26 +437,24 @@ export async function requestPasswordReset(email: string): Promise<{
   ok: true;
   devVerificationCode?: string;
 }> {
+  if (!passwordResetAvailable()) {
+    throw new Error(
+      "Password reset is unavailable until email delivery is configured. Contact support."
+    );
+  }
+
   const user = await findUserByEmail(normEmail(email));
   if (!user) {
     return { ok: true };
   }
 
-  try {
-    const mail = await issueVerification(user, { reset: true });
-    return {
-      ok: true,
-      devVerificationCode: mail.sent ? undefined : mail.devCode,
-    };
-  } catch (err) {
-    // Code is already saved on the user before send; surface for admin recovery.
-    if (isAdminEmail(user.email) && user.verificationCode) {
-      return { ok: true, devVerificationCode: user.verificationCode };
-    }
-    throw err instanceof Error
-      ? err
-      : new Error("Could not send reset email. Try again shortly.");
+  const mail = await issueVerification(user, { reset: true });
+  if (!mail.sent) {
+    throw new Error(
+      "Could not send reset email. Please try again in a moment."
+    );
   }
+  return { ok: true };
 }
 
 export async function resetPasswordWithCode(input: {
