@@ -54,6 +54,16 @@ export async function listMemberProfiles(): Promise<StoredMemberProfile[]> {
     });
 }
 
+export async function deleteMemberProfilesByEmail(email: string): Promise<number> {
+  const target = email.toLowerCase().trim();
+  if (!target) return 0;
+  const all = await readAll();
+  const next = all.filter((p) => p.email.toLowerCase().trim() !== target);
+  const removed = all.length - next.length;
+  if (removed > 0) await writeAll(next);
+  return removed;
+}
+
 export async function deleteMemberProfilesByIds(ids: string[]): Promise<number> {
   const drop = new Set(ids.map((id) => id.trim()).filter(Boolean));
   if (drop.size === 0) return 0;

@@ -22,6 +22,7 @@ export interface StoredAuthUser {
   name: string;
   passwordHash?: string;
   googleId?: string;
+  appleId?: string;
   emailVerified: boolean;
   verificationCode?: string;
   verificationExpires?: string;
@@ -43,7 +44,7 @@ export interface PublicAuthUser {
   email: string;
   name: string;
   emailVerified: boolean;
-  provider: "email" | "google";
+  provider: "email" | "google" | "apple";
 }
 
 const DATA_DIR = getDataDir();
@@ -104,12 +105,18 @@ function codeExpiry() {
 }
 
 function toPublic(user: StoredAuthUser): PublicAuthUser {
+  let provider: PublicAuthUser["provider"] = "email";
+  if (user.appleId && !user.passwordHash && !user.googleId) {
+    provider = "apple";
+  } else if (user.googleId && !user.passwordHash && !user.appleId) {
+    provider = "google";
+  }
   return {
     id: user.id,
     email: user.email,
     name: user.name,
     emailVerified: user.emailVerified,
-    provider: user.googleId && !user.passwordHash ? "google" : "email",
+    provider,
   };
 }
 
@@ -145,6 +152,11 @@ async function saveUser(user: StoredAuthUser) {
 async function deleteUserById(userId: string) {
   const users = await readUsers();
   await writeUsers(users.filter((u) => u.id !== userId));
+}
+
+async function revokeAllSessionsForUser(userId: string) {
+  const sessions = await readSessions();
+  await writeSessions(sessions.filter((s) => s.userId !== userId));
 }
 
 async function issueVerification(
@@ -221,8 +233,9 @@ export async function signUpUser(input: {
   const existing = await findUserByEmail(email);
   if (existing) {
     if (!existing.passwordHash) {
+      const provider = existing.appleId ? "Apple" : "Google";
       throw new Error(
-        "This email already uses Google sign-in. Log in with Google, or use Forgot password to set a password."
+        `This email already uses ${provider} sign-in. Log in with ${provider}, or use Forgot password to set a password.`
       );
     }
     throw new Error(
@@ -286,8 +299,9 @@ export async function loginUser(input: {
     throw new Error("Invalid email or password");
   }
   if (!user.passwordHash) {
+    const provider = user.appleId ? "Apple" : "Google";
     throw new Error(
-      "This account uses Google sign-in. Tap Continue with Google, or use Forgot password to set a password."
+      `This account uses ${provider} sign-in. Tap Continue with ${provider}, or use Forgot password to set a password.`
     );
   }
 
@@ -304,6 +318,43 @@ export async function loginUser(input: {
     user.verificationExpires = undefined;
     user.resetPending = undefined;
     user.updatedAt = new Date().toISOString();
+    await saveUser(user);
+  }
+
+  const token = await createSession(user.id);
+  return { user: toPublic(user), token };
+}
+
+export async function loginOrRegisterApple(input: {
+  email: string;
+  name: string;
+  appleId: string;
+  emailVerified: boolean;
+}): Promise<{ user: PublicAuthUser; token: string }> {
+  const email = normEmail(input.email);
+  if (!email) throw new Error("Apple account email is required");
+
+  let user = await findUserByEmail(email);
+  const now = new Date().toISOString();
+
+  if (!user) {
+    user = {
+      id: randomUUID(),
+      email,
+      name: input.name.trim() || email.split("@")[0],
+      appleId: input.appleId,
+      emailVerified: input.emailVerified,
+      createdAt: now,
+      updatedAt: now,
+    };
+    markAdminVerified(user);
+    await saveUser(user);
+  } else {
+    user.appleId = input.appleId;
+    user.name = user.name || input.name.trim();
+    user.emailVerified = user.emailVerified || input.emailVerified;
+    markAdminVerified(user);
+    user.updatedAt = now;
     await saveUser(user);
   }
 
@@ -407,7 +458,8 @@ export async function resendVerification(email: string): Promise<{
   if (!user) throw new Error("Account not found");
   if (user.emailVerified) throw new Error("Email is already verified");
   if (!user.passwordHash) {
-    throw new Error("This account uses Google sign-in");
+    const provider = user.appleId ? "Apple" : "Google";
+    throw new Error(`This account uses ${provider} sign-in`);
   }
 
   if (markAdminVerified(user)) {
@@ -494,4 +546,17 @@ export async function resetPasswordWithCode(input: {
 export async function revokeSession(token: string) {
   const sessions = await readSessions();
   await writeSessions(sessions.filter((s) => s.token !== token));
+}
+
+export async function deleteUserAccount(userId: string): Promise<{
+  email: string;
+}> {
+  const users = await readUsers();
+  const user = users.find((u) => u.id === userId);
+  if (!user) throw new Error("Account not found");
+
+  const email = user.email;
+  await deleteUserById(userId);
+  await revokeAllSessionsForUser(userId);
+  return { email };
 }

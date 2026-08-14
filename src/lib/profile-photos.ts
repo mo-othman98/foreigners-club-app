@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "fs/promises";
+import { mkdir, readFile, writeFile, unlink } from "fs/promises";
 import path from "path";
 import { getDataDir } from "./data-dir";
 
@@ -30,6 +30,17 @@ export async function saveProfilePhoto(
   );
   await writeFile(filePath, buffer);
   return profilePhotoApiUrl(email);
+}
+
+export async function deleteProfilePhoto(email: string): Promise<void> {
+  const key = safeEmailKey(email);
+  for (const ext of ["jpg", "jpeg", "png"]) {
+    try {
+      await unlink(path.join(PHOTO_DIR, `${key}.${ext}`));
+    } catch {
+      // file may not exist
+    }
+  }
 }
 
 export async function readProfilePhoto(
