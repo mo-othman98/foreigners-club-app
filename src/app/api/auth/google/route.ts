@@ -19,8 +19,17 @@ async function verifyGoogleIdToken(idToken: string) {
     email_verified?: string;
   };
 
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  if (clientId && data.aud !== clientId) {
+  // iOS tokens are issued for the iOS client ID; web/expo may use the web client ID.
+  const allowedAudiences = [
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_IOS_CLIENT_ID,
+  ].filter(Boolean) as string[];
+
+  if (
+    allowedAudiences.length > 0 &&
+    data.aud &&
+    !allowedAudiences.includes(data.aud)
+  ) {
     throw new Error("Google client mismatch");
   }
 

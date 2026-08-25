@@ -32,6 +32,10 @@ services:
         sync: false
       - key: APP_REVIEW_NAME
         value: "App Reviewer"
+      - key: GOOGLE_CLIENT_ID
+        value: "718934773512-8b361k96cd4en9j5laal5thcbkqofun3.apps.googleusercontent.com"
+      - key: GOOGLE_IOS_CLIENT_ID
+        value: "718934773512-d0b65juo9db5o8os6b00b7u9ncv3i6d1.apps.googleusercontent.com"
     disk:
       name: foreigners-club-data
       mountPath: /var/data
